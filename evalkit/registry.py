@@ -7,8 +7,8 @@ import sys as _sys
 if str(PKG_ROOT) not in _sys.path:
     _sys.path.insert(0, str(PKG_ROOT))
 import paths as _paths
-HYB = PROJ / "ssdu-mamba_hybrid_hf"
-R = "dataandoutputview/recons"
+HYB = PROJ / ""
+R = ""
 
 DATA = _paths.DATA
 ROOT = _paths.TEST_ROOT
