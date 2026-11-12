@@ -1,0 +1,34 @@
+# HyBand dependencies. Versions are what the model was trained and tested with.
+#
+# INSTALL ORDER MATTERS -- torch must be present before the two compiled
+# packages, and both need --no-build-isolation so they build against THAT torch
+# rather than a fresh one pip would otherwise fetch:
+#
+#   python -m venv .venv && source .venv/bin/activate
+#   pip install -U pip wheel
+#   pip install torch --index-url https://download.pytorch.org/whl/cu126
+#   pip install -r requirements.txt
+#   pip install --no-build-isolation causal-conv1d==1.6.2.post1 mamba-ssm==2.3.2.post1
+#
+# torch is NOT pinned here: install the build matching your CUDA first.
+# This reference environment is python 3.12.3 / torch 2.13.0+cu126.
+
+numpy==2.4.4
+h5py==3.16.0
+scipy==1.18.0
+scikit-image==0.26.0
+matplotlib==3.11.1
+sigpy==0.1.27
+
+# timm is OPTIONAL and deliberately not listed. Its only use was DropPath,
+# which is vendored in models/mamba_vss.py; importing timm drags in torchvision,
+# whose compiled ops must match the installed torch exactly or you get
+#     RuntimeError: operator torchvision::nms does not exist
+fastmri==0.3.0
+
+# mamba-ssm and causal-conv1d are installed SEPARATELY (see above). They compile
+# CUDA kernels and need nvcc. mamba-ssm is NOT optional: models/mamba_vss.py
+# imports selective_scan_fn in a try/except but has no fallback -- the `M`
+# blocks of the MCMCMC trunk call it directly, so every model here needs it.
+#   causal-conv1d==1.6.2.post1
+#   mamba-ssm==2.3.2.post1
