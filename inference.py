@@ -10,6 +10,10 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
+from data import Config, build_loader
+from hyband.neighbours import add_neighbours
+from hyband.trainer import build_model
+from hyband.infer import score_crop, mag
 HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
@@ -33,9 +37,6 @@ def main():
                     help="only these slice indices within each volume: "
                          "'7', '0,7,12' or a range '5-9'. Default: all slices.")
     ap.add_argument("--num-workers", type=int, default=4)
-    ap.add_argument("--pad-width", type=int, default=None)
-    ap.add_argument("--out-cut", type=float, default=None)
-    ap.add_argument("--keep-measured", type=int, default=None)
     ap.add_argument("--radial", action="store_true")
     ap.add_argument("--radial-acs", type=int, default=24)
     a = ap.parse_args()
@@ -64,27 +65,11 @@ def main():
             return _orig(cfg)
         D.build_mask_func = _patched
 
-    from data import Config, build_loader
-    from hyband.neighbours import add_neighbours
-    from hyband.trainer import build_model
-    from hyband.infer import score_crop, mag
-
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(a.ckpt, map_location=dev, weights_only=False)
     ta = Namespace(**ck["args"])
-    if a.pad_width is not None:
-        ta.th_pad = a.pad_width
-    if a.out_cut is not None:
-        ta.th_out_cut = a.out_cut
     m = build_model(ta, dev)
-    if a.keep_measured is not None:
-        m.keep_measured_corners = bool(a.keep_measured)
     m.load_state_dict(ck["model"]); m.eval()
-    print(f"loaded {a.ckpt} (epoch {ck.get('epoch')}) on {dev}\n"
-          f"  pad={m.regularizer.pad}  out_cut={m.out_cut}  "
-          f"keep_measured={getattr(m, 'keep_measured_corners', None)}  "
-          f"spec_lambda={getattr(m, 'spec_lambda', 0)}  nbr={m.nbr_slices}", flush=True)
-
     cfg = Config(data_path=data_path, dataset=ta.dataset, challenge=ta.challenge,
                  accelerations=[ta.accel], center_fractions=[ta.center_fraction],
                  mask_type=ta.mask_type, batch_size=1, num_workers=a.num_workers,
