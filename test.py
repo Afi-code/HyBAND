@@ -18,12 +18,6 @@ def main():
     ap.add_argument("--volume", action="append", default=None,
                     help="only this volume, e.g. --volume file1000031 (repeatable)")
     ap.add_argument("--num-workers", type=int, default=4)
-    ap.add_argument("--pad-width", type=int, default=None)
-    ap.add_argument("--out-cut", type=float, default=None)
-    ap.add_argument("--keep-measured", type=int, default=None)
-    ap.add_argument("--radial", action="store_true")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="print both commands and exit WITHOUT running them")
     a = ap.parse_args()
 
     if a.recon is None:
@@ -36,12 +30,8 @@ def main():
                "--split", a.split, "--num-workers", str(a.num_workers)]
         if a.vols:                   cmd += ["--vols", str(a.vols)]
         for v in (a.volume or []):   cmd += ["--volume", v]
-        if a.pad_width is not None:  cmd += ["--pad-width", str(a.pad_width)]
-        if a.out_cut is not None:    cmd += ["--out-cut", str(a.out_cut)]
-        if a.keep_measured is not None: cmd += ["--keep-measured", str(a.keep_measured)]
-        if a.radial:                 cmd += ["--radial"]
         print("$ " + " ".join(cmd), flush=True)
-        if not a.dry_run and subprocess.call(cmd, cwd=HERE) != 0:
+        if subprocess.call(cmd, cwd=HERE) != 0:
             sys.exit("reconstruction failed")
 
     cmd = [sys.executable, str(HERE / "eval_dump.py"),
@@ -50,9 +40,6 @@ def main():
     if a.vols and not a.volume:
         cmd += ["--limit", str(a.vols)]
     print("\n$ " + " ".join(cmd), flush=True)
-    if a.dry_run:
-        print("(--dry-run: not executed)")
-        sys.exit(0)
     sys.exit(subprocess.call(cmd, cwd=HERE))
 
 
